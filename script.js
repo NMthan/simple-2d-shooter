@@ -204,17 +204,32 @@ function updateStars() {
 // Multiplayer Networking
 // --------------------------------------------------------
 
+const ROOM_PREFIX = "SPACE-DEF-";
+
+const peerConfig = {
+    config: {
+        'iceServers': [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
+        ]
+    }
+};
+
 function generateShortId() {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
 function initPeerAsHost() {
     initAudio();
-    const roomId = generateShortId();
-    peer = new Peer(roomId);
+    const shortId = generateShortId();
+    const fullId = ROOM_PREFIX + shortId;
+    
+    // Pass config with STUN servers to improve connection success rate
+    peer = new Peer(fullId, peerConfig);
 
     peer.on('open', (id) => {
-        myRoomIdEl.innerText = id;
+        myRoomIdEl.innerText = shortId; // Show only the short ID to user
         roomInfo.classList.remove('hidden');
         startGameAsHost();
     });
@@ -251,14 +266,17 @@ function setupHostConnection() {
     });
 }
 
-function initPeerAsClient(hostId) {
+function initPeerAsClient(shortId) {
     initAudio();
-    if (!hostId) return;
+    if (!shortId) return;
     joinBtn.innerText = "Connecting...";
     
-    peer = new Peer();
+    const fullId = ROOM_PREFIX + shortId.toUpperCase();
+    
+    peer = new Peer(peerConfig);
     peer.on('open', () => {
-        conn = peer.connect(hostId.toUpperCase());
+        conn = peer.connect(fullId, { reliable: true });
+        
         conn.on('open', () => {
             isHost = false;
             isMultiplayer = true;
@@ -266,7 +284,7 @@ function initPeerAsClient(hostId) {
             
             startScreen.classList.add('hidden');
             roomInfo.classList.remove('hidden');
-            myRoomIdEl.innerText = hostId;
+            myRoomIdEl.innerText = shortId.toUpperCase();
             connectionStatus.innerText = "Connected to Host!";
             connectionStatus.style.color = "#0ff";
             
@@ -296,13 +314,22 @@ function initPeerAsClient(hostId) {
         });
 
         conn.on('close', () => {
-            alert("Connection lost.");
+            alert("Connection lost. The host might have closed the game.");
             location.reload();
+        });
+        
+        conn.on('error', (err) => {
+            console.error("Connection error:", err);
         });
     });
     
     peer.on('error', (err) => {
-        alert("Error connecting: " + err.type);
+        console.error("Peer error:", err);
+        if (err.type === 'peer-unavailable') {
+            alert("Room not found! Make sure the host is still in the game and you typed the code correctly.");
+        } else {
+            alert("Network error: " + err.type + "\nTry checking your internet or reloading the page.");
+        }
         joinBtn.innerText = "Join Room";
     });
 }
