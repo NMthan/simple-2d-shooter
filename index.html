@@ -3,23 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple 2D Shooter</title>
+    <title>Space Defender - Multiplayer</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Include PeerJS for WebRTC Multiplayer -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
     <div id="game-container">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="ui-layer">
             <div id="score-display">Score: <span id="score">0</span></div>
+            
+            <div id="room-info" class="hidden">
+                Room ID: <span id="my-room-id">...</span>
+                <div id="connection-status">Waiting for player 2...</div>
+            </div>
+
             <div id="game-over" class="hidden">
                 <h1>Game Over</h1>
                 <p>Final Score: <span id="final-score">0</span></p>
-                <button id="restart-btn">Play Again</button>
+                <button id="restart-btn" class="hidden">Play Again (Host)</button>
+                <p id="client-waiting-msg" class="hidden">Waiting for Host to restart...</p>
             </div>
+            
             <div id="start-screen">
                 <h1>Space Defender</h1>
                 <p>Use Left/Right Arrows to Move, Spacebar to Shoot</p>
-                <button id="start-btn">Start Game</button>
+                
+                <div class="multiplayer-menu">
+                    <div class="menu-section">
+                        <h3>Play Solo or Host</h3>
+                        <button id="host-btn">Create Room / Play Solo</button>
+                    </div>
+                    
+                    <div class="menu-divider">OR</div>
+                    
+                    <div class="menu-section">
+                        <h3>Join Friend</h3>
+                        <input type="text" id="join-id-input" placeholder="Enter Room ID" />
+                        <button id="join-btn">Join Room</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
